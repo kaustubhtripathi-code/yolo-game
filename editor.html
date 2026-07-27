@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YOLO — level editor</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0b0714; color: #cabfdc;
+    font: 13px/1.5 "Courier New", ui-monospace, monospace;
+    padding: 16px 20px 40px;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; color: #ffd166; letter-spacing: .12em; }
+  .sub { color: #6e6288; margin: 0 0 14px; font-size: 12px; }
+  .row { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+  .col { min-width: 0; }
+  #gridwrap { overflow-x: auto; border: 1px solid #2b2140; background: #150e26; padding: 8px; border-radius: 4px; }
+  #grid { display: block; image-rendering: pixelated; cursor: crosshair; }
+  .pal { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; max-width: 940px; }
+  .pal button {
+    display: flex; align-items: center; gap: 6px;
+    background: #1c1430; color: #cabfdc; border: 1px solid #33254d;
+    padding: 5px 9px; border-radius: 3px; font: inherit; cursor: pointer;
+  }
+  .pal button.on { background: #e8455c; border-color: #ff8fa0; color: #fff; }
+  .pal b { font-size: 14px; width: 10px; text-align: center; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+  .tools button {
+    background: #221836; color: #cabfdc; border: 1px solid #3a2a58;
+    padding: 6px 12px; border-radius: 3px; font: inherit; cursor: pointer;
+  }
+  .tools button:hover { background: #2e2148; }
+  .tools button.go { background: #1f7a5a; border-color: #34b184; color: #eafff6; }
+  .tools button.warn { background: #5a2140; border-color: #8f3a63; }
+  fieldset { border: 1px solid #2b2140; border-radius: 4px; margin: 0 0 12px; padding: 10px 12px; }
+  legend { color: #ffd166; font-size: 11px; letter-spacing: .1em; padding: 0 6px; }
+  label { display: block; margin-bottom: 7px; color: #8d80ab; font-size: 11px; }
+  input, select, textarea {
+    width: 100%; background: #150e26; color: #e6dff5; border: 1px solid #33254d;
+    padding: 5px 7px; border-radius: 3px; font: inherit; margin-top: 2px;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  #report { border: 1px solid #2b2140; border-radius: 4px; padding: 10px 12px; min-height: 74px; }
+  #report.ok { border-color: #2f6f52; background: #10231b; }
+  #report.bad { border-color: #7a3050; background: #241019; }
+  #report h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .08em; }
+  #report ul { margin: 4px 0 0; padding-left: 18px; }
+  #report li { color: #ff9db0; }
+  .ok h3 { color: #6fe0a8; } .bad h3 { color: #ff8fa0; }
+  .meta { color: #6e6288; font-size: 11px; }
+  .souv { display: flex; gap: 6px; margin-bottom: 5px; }
+  .souv input { flex: 1; }
+  .souv select { width: 108px; }
+  .souv button { background: #2a1a2e; border: 1px solid #4a2a44; color: #cabfdc; border-radius: 3px; cursor: pointer; padding: 0 8px; }
+</style>
+</head>
+<body>
+
+<h1>YOLO LEVEL EDITOR</h1>
+<p class="sub">
+  paint · undo/redo · autosaved draft · live validation (the same
+  <code>levelcheck.js</code> the CLI and CI run) · Test boots the real engine on this level
+</p>
+
+<div class="row">
+  <div class="col" style="flex:1 1 720px">
+    <div id="gridwrap"><canvas id="grid"></canvas></div>
+    <div class="pal" id="pal"></div>
+    <div class="tools">
+      <button id="undo">undo (ctrl+z)</button>
+      <button id="redo">redo (ctrl+y)</button>
+      <button id="wider">wider +4</button>
+      <button id="narrower">narrower -4</button>
+      <button id="taller">taller +1</button>
+      <button id="shorter">shorter -1</button>
+      <button id="fillfloor">fill floor row</button>
+      <button class="warn" id="clear">clear map</button>
+      <button class="go" id="test">▶ TEST THIS LEVEL</button>
+    </div>
+    <div id="report"></div>
+  </div>
+
+  <div class="col" style="flex:0 1 320px">
+    <fieldset>
+      <legend>METADATA</legend>
+      <label>id (save key)<input id="m-id"></label>
+      <label>title<input id="m-title"></label>
+      <label>place<input id="m-place"></label>
+      <label>theme<select id="m-theme"></select></label>
+      <label>photo path<input id="m-photo"></label>
+      <label>secret-pit caption<input id="m-caption"></label>
+      <p class="meta">
+        Translations live in <code>i18n.js</code>, keyed by the English string —
+        add the title/place/caption there for fr and zh.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>SOUVENIRS (cycled over the <code>*</code> tiles)</legend>
+      <div id="souvs"></div>
+      <div class="tools"><button id="addsouv">+ add souvenir</button></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>EXPORT / IMPORT</legend>
+      <div class="tools">
+        <button id="export">export for levels.js</button>
+        <button id="import">import from box</button>
+        <button id="loadreal">load a shipped level</button>
+      </div>
+      <textarea id="io" spellcheck="false" placeholder="export drops a levels.js entry here; paste one back and press import"></textarea>
+    </fieldset>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
+<script src="physics.js"></script>
+<script src="levels.js"></script>
+<script src="levelcheck.js"></script>
+<script src="art.js"></script>
+<script src="editor.js"></script>
+</body>
+</html>

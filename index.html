@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E%E2%9D%A4%3C/text%3E%3C/svg%3E">
+<title>YOLO — a game about us</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: #0b0714; overscroll-behavior: none; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: "Courier New", ui-monospace, monospace; color: #b9aecb;
+    touch-action: none; -webkit-user-select: none; user-select: none;
+  }
+  #screen {
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #0b0714; box-shadow: 0 0 0 1px #2a1f3d, 0 24px 70px rgba(0,0,0,.7);
+    display: block;
+  }
+  #hint { margin-top: 10px; font-size: 12px; opacity: .55; text-align: center; line-height: 1.5; }
+  #pad { display: none; position: fixed; inset: auto 0 0 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+         justify-content: space-between; pointer-events: none; }
+  #pad div { pointer-events: auto; display: flex; gap: 10px; }
+  #pad button {
+    width: 62px; height: 62px; border-radius: 50%; border: 1px solid #4a3a6a;
+    background: rgba(30,20,50,.72); color: #d8cdea; font: 16px/1 "Courier New", monospace;
+    backdrop-filter: blur(4px);
+  }
+  #pad button.on { background: rgba(232,69,92,.75); }
+  #rotate { display: none; }
+  @media (hover: none) and (pointer: coarse) { #pad { display: flex; } #hint { display: none; } }
+  /* Six 62px buttons plus gaps overflow a 390px phone, and the one that falls
+     off the right edge is jump. Shrink them below 560px so they all fit. */
+  @media (max-width: 560px) {
+    #pad { padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
+    #pad div { gap: 7px; }
+    #pad button { width: 50px; height: 50px; font-size: 14px; }
+  }
+  @media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+    #rotate { display: block; position: fixed; top: 14px; left: 0; right: 0;
+              text-align: center; font-size: 12px; color: #6e6288; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="screen" width="480" height="270"></canvas>
+<p id="rotate">&#8635; turn your phone sideways for a bigger screen</p>
+
+<p id="hint">
+  &larr; &rarr; move &nbsp;·&nbsp; SPACE / &uarr; jump (press again in the air) &nbsp;·&nbsp; &darr; drop through platforms<br>
+  ENTER select &nbsp;·&nbsp; ESC back &nbsp;·&nbsp; R restart level &nbsp;·&nbsp; G souvenir gallery
+</p>
+
+<div id="pad">
+  <div>
+    <button data-key="left" aria-label="left">&larr;</button>
+    <button data-key="right" aria-label="right">&rarr;</button>
+    <button data-key="down" aria-label="down">&darr;</button>
+  </div>
+  <div>
+    <button data-key="back" aria-label="back">esc</button>
+    <button data-key="ok" aria-label="confirm">ok</button>
+    <button data-key="jump" aria-label="jump">&uarr;</button>
+  </div>
+</div>
+
+<!-- classic scripts on purpose: this runs from file:// with no build step and no server -->
+<script src="i18n.js"></script>
+<script src="physics.js"></script>
+<script src="levels.js"></script>
+<script src="levelcheck.js"></script>
+<script src="art.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
